@@ -1,4 +1,4 @@
-import { getProduct, getProducts } from "./api/productApi.js";
+import { getProduct, getProducts, getCategories } from "./api/productApi.js";
 import { DetailPage } from "./pages/DetailPage.js";
 import { HomePage } from "./pages/HomePage.js";
 
@@ -22,8 +22,9 @@ async function render() {
 
   if (relativePath === "/") {
     $root.innerHTML = HomePage({ loading: true });
-    const data = await getProducts();
-    $root.innerHTML = HomePage({ ...data, loading: false });
+    const products = await getProducts();
+    const categories = await getCategories();
+    $root.innerHTML = HomePage({ ...products, categories: categories, loading: false });
 
     document.body.addEventListener("click", (e) => {
       if (e.target.closest(".product-card")) {
