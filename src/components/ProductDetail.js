@@ -7,22 +7,47 @@ const Loading = `
         </div>
 `;
 
-const ProductItem = ({ title, image, lprice, stock, rating, reviewCount, description }) => `
+const RelatedProductItem = ({ productId, title, image, lprice }) => `
+  <div class="bg-gray-50 rounded-lg p-3 related-product-card cursor-pointer" data-product-id="${productId}">
+    <div class="aspect-square bg-white rounded-md overflow-hidden mb-2">
+      <img src="${image}" alt="${title}" class="w-full h-full object-cover" loading="lazy">
+    </div>
+    <h3 class="text-sm font-medium text-gray-900 mb-1 line-clamp-2">${title}</h3>
+    <p class="text-sm font-bold text-blue-600">${Number(lprice).toLocaleString()}원</p>
+  </div>
+`;
+
+const ProductItem = (
+  { productId, title, image, lprice, stock, rating, reviewCount, description, category1, category2, brand },
+  relatedProducts = [],
+) => `
         <nav class="mb-4">
           <div class="flex items-center space-x-2 text-sm text-gray-600">
             <a href="/" data-link="" class="hover:text-blue-600 transition-colors">홈</a>
+            ${
+              category1
+                ? `
             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
             </svg>
-            <button class="breadcrumb-link" data-category1="생활/건강">
-              생활/건강
+            <button class="breadcrumb-link" data-category1="${category1}">
+              ${category1}
             </button>
+            `
+                : ""
+            }
+            ${
+              category2
+                ? `
             <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
             </svg>
-            <button class="breadcrumb-link" data-category2="생활용품">
-              생활용품
+            <button class="breadcrumb-link" data-category1="${category1}" data-category2="${category2}">
+              ${category2}
             </button>
+            `
+                : ""
+            }
           </div>
         </nav>
         <!-- 상품 상세 정보 -->
@@ -34,7 +59,7 @@ const ProductItem = ({ title, image, lprice, stock, rating, reviewCount, descrip
             </div>
             <!-- 상품 정보 -->
             <div>
-              <p class="text-sm text-gray-600 mb-1"></p>
+              <p class="text-sm text-gray-600 mb-1">${brand || ""}</p>
               <h1 class="text-xl font-bold text-gray-900 mb-3">${title}</h1>
               <!-- 평점 및 리뷰 -->
               <div class="flex items-center mb-3">
@@ -63,7 +88,7 @@ const ProductItem = ({ title, image, lprice, stock, rating, reviewCount, descrip
               </div>
               <!-- 재고 -->
               <div class="text-sm text-gray-600 mb-4">
-                재고 ${stock}개
+                재고 ${stock || 0}개
               </div>
               <!-- 설명 -->
               <div class="text-sm text-gray-700 leading-relaxed mb-6">
@@ -82,7 +107,7 @@ const ProductItem = ({ title, image, lprice, stock, rating, reviewCount, descrip
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
                   </svg>
                 </button>
-                <input type="number" id="quantity-input" value="1" min="1" max="107" class="w-16 h-8 text-center text-sm border-t border-b border-gray-300 
+                <input type="number" id="quantity-input" value="1" min="1" max="${stock || 100}" class="w-16 h-8 text-center text-sm border-t border-b border-gray-300 
                   focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                 <button id="quantity-increase" class="w-8 h-8 flex items-center justify-center border border-gray-300 
                    rounded-r-md bg-gray-50 hover:bg-gray-100">
@@ -93,7 +118,7 @@ const ProductItem = ({ title, image, lprice, stock, rating, reviewCount, descrip
               </div>
             </div>
             <!-- 액션 버튼 -->
-            <button id="add-to-cart-btn" data-product-id="85067212996" class="w-full bg-blue-600 text-white py-3 px-4 rounded-md 
+            <button id="add-to-cart-btn" data-product-id="${productId}" class="w-full bg-blue-600 text-white py-3 px-4 rounded-md 
                  hover:bg-blue-700 transition-colors font-medium">
               장바구니 담기
             </button>
@@ -114,28 +139,14 @@ const ProductItem = ({ title, image, lprice, stock, rating, reviewCount, descrip
           </div>
           <div class="p-4">
             <div class="grid grid-cols-2 gap-3 responsive-grid">
-              <div class="bg-gray-50 rounded-lg p-3 related-product-card cursor-pointer" data-product-id="86940857379">
-                <div class="aspect-square bg-white rounded-md overflow-hidden mb-2">
-                  <img src="https://shopping-phinf.pstatic.net/main_8694085/86940857379.1.jpg" alt="샷시 풍지판 창문 바람막이 베란다 문 틈막이 창틀 벌레 차단 샤시 방충망 틈새막이" class="w-full h-full object-cover" loading="lazy">
-                </div>
-                <h3 class="text-sm font-medium text-gray-900 mb-1 line-clamp-2">샷시 풍지판 창문 바람막이 베란다 문 틈막이 창틀 벌레 차단 샤시 방충망 틈새막이</h3>
-                <p class="text-sm font-bold text-blue-600">230원</p>
-              </div>
-              <div class="bg-gray-50 rounded-lg p-3 related-product-card cursor-pointer" data-product-id="82094468339">
-                <div class="aspect-square bg-white rounded-md overflow-hidden mb-2">
-                  <img src="https://shopping-phinf.pstatic.net/main_8209446/82094468339.4.jpg" alt="실리카겔 50g 습기제거제 제품 /산업 신발 의류 방습제" class="w-full h-full object-cover" loading="lazy">
-                </div>
-                <h3 class="text-sm font-medium text-gray-900 mb-1 line-clamp-2">실리카겔 50g 습기제거제 제품 /산업 신발 의류 방습제</h3>
-                <p class="text-sm font-bold text-blue-600">280원</p>
-              </div>
+              ${relatedProducts.map(RelatedProductItem).join("")}
             </div>
           </div>
         </div>
   `;
 
-export const ProductDetail = ({ product, loading }) => {
-  console.log(product);
+export const ProductDetail = ({ product, loading, relatedProducts = [] }) => {
   return `
-        ${loading ? Loading : ProductItem(product)}
+        ${loading ? Loading : ProductItem(product, relatedProducts)}
     `;
 };

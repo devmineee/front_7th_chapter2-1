@@ -24,8 +24,13 @@ const Loading = `
         </div>
 `;
 
-const ProductItem = ({ productId, title, image, lprice }) => `
+const NoMore = `
+    <div class="text-center py-4 text-sm text-gray-500">
+      모든 상품을 확인했습니다
+    </div>
+`;
 
+const ProductItem = ({ productId, title, image, lprice, brand }) => `
               <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden product-card"
                    data-product-id="${productId}">
                 <!-- 상품 이미지 -->
@@ -41,21 +46,23 @@ const ProductItem = ({ productId, title, image, lprice }) => `
                     <h3 class="text-sm font-medium text-gray-900 line-clamp-2 mb-1">
                       ${title}
                     </h3>
-                    <p class="text-xs text-gray-500 mb-2"></p>
+                    <p class="text-xs text-gray-500 mb-2">${brand || ""}</p>
                     <p class="text-lg font-bold text-gray-900">
                       ${Number(lprice).toLocaleString()}원
                     </p>
                   </div>
                   <!-- 장바구니 버튼 -->
                   <button class="w-full bg-blue-600 text-white text-sm py-2 px-3 rounded-md
-                         hover:bg-blue-700 transition-colors add-to-cart-btn" data-product-id="85067212996">
+                         hover:bg-blue-700 transition-colors add-to-cart-btn" data-product-id="${productId}">
                     장바구니 담기
                   </button>
                 </div>
               </div>
 `;
 
-export const ProductList = ({ products, loading }) => {
+export const ProductList = ({ products = [], loading, hasMore = true, loadingMore = false, totalCount = 0 }) => {
+  const displayCount = totalCount > 0 ? totalCount : products.length;
+
   return /*html */ `
     <div class="mb-6">
       <div>
@@ -63,16 +70,17 @@ export const ProductList = ({ products, loading }) => {
           loading
             ? `
             <div class="grid grid-cols-2 gap-4 mb-6" id="products-grid">
-                ${Skeleton.repeat(16)}
+                ${Skeleton.repeat(4)}
             </div>
             ${Loading}`
             : `
             <div class="mb-4 text-sm text-gray-600">
-              총 <span class="font-medium text-gray-900">${products.length}개</span>의 상품
+              총 <span class="font-medium text-gray-900">${displayCount}개</span>의 상품
             </div>
             <div class="grid grid-cols-2 gap-4 mb-6" id="products-grid">
                 ${products.map(ProductItem).join("")}
             </div>
+            ${loadingMore ? Loading : hasMore ? "" : NoMore}
             `
         }
 
