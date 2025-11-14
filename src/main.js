@@ -31,23 +31,85 @@ let scrollEventListener = null;
 
 // 유틸리티 함수
 const showToast = (message = "장바구니에 추가되었습니다") => {
+  // 모든 기존 토스트 제거 (중복 방지)
+  const allToasts = document.querySelectorAll("#toast-container");
+  allToasts.forEach((toast) => toast.remove());
+
+  // body에 새 토스트 생성
+  const body = document.body;
+  if (!body) return;
+
+  const toastHTML = `
+    <div id="toast-container" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50" style="display: block !important; visibility: visible !important; opacity: 1 !important;">
+      <div id="toast" class="bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center space-x-2 max-w-sm">
+        <div class="flex-shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+          </svg>
+        </div>
+        <p id="toast-message" class="text-sm font-medium">${message}</p>
+        <button id="toast-close-btn" class="flex-shrink-0 ml-2 text-white hover:text-gray-200">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  `;
+  body.insertAdjacentHTML("beforeend", toastHTML);
   const container = document.getElementById("toast-container");
   const toastMessage = document.getElementById("toast-message");
 
-  if (container && toastMessage) {
-    toastMessage.textContent = message;
-    container.style.display = "block";
+  if (!container || !toastMessage) return;
 
-    // 기존 타이머 제거
-    if (window.toastTimer) {
-      clearTimeout(window.toastTimer);
+  toastMessage.textContent = message;
+
+  // 기존 타이머 제거
+  if (window.toastTimer) {
+    clearTimeout(window.toastTimer);
+  }
+
+  // 즉시 표시하고 모든 visibility 속성 설정 (!important 사용)
+  container.style.setProperty("display", "block", "important");
+  container.style.setProperty("visibility", "visible", "important");
+  container.style.setProperty("opacity", "1", "important");
+
+  // 강제로 리플로우 발생시켜 브라우저가 렌더링하도록 함
+  void container.offsetHeight;
+  void container.offsetWidth;
+  const computedStyle = window.getComputedStyle(container);
+  void computedStyle.display;
+  void computedStyle.visibility;
+  void computedStyle.opacity;
+
+  // 추가로 getBoundingClientRect를 호출하여 레이아웃 계산 강제
+  const rect = container.getBoundingClientRect();
+  void rect.width;
+  void rect.height;
+
+  // requestAnimationFrame을 사용하여 브라우저가 확실히 렌더링하도록 함
+  requestAnimationFrame(() => {
+    // root 내부의 토스트 다시 제거 (PageLayout이 재렌더링될 수 있음)
+    const rootToast = document.querySelector("#root #toast-container");
+    if (rootToast) {
+      rootToast.remove();
     }
 
-    // 3초 후 자동 닫기
-    window.toastTimer = setTimeout(() => {
-      container.style.display = "none";
-    }, 3000);
-  }
+    if (container && container.isConnected) {
+      container.style.setProperty("display", "block", "important");
+      container.style.setProperty("visibility", "visible", "important");
+      container.style.setProperty("opacity", "1", "important");
+      void container.offsetHeight;
+      void container.getBoundingClientRect();
+    }
+  });
+
+  // 3초 후 자동 닫기
+  window.toastTimer = setTimeout(() => {
+    if (container && container.isConnected) {
+      container.style.setProperty("display", "none", "important");
+    }
+  }, 3000);
 };
 
 const closeToast = () => {
@@ -76,15 +138,12 @@ const closeCartModal = () => {
 };
 
 const renderCartModal = () => {
-  const $root = document.querySelector("#root");
-  if (!$root) return;
-
   let overlay = document.querySelector(".cart-modal-overlay");
 
   if (!overlay) {
     overlay = document.createElement("div");
     overlay.className = "cart-modal-overlay fixed inset-0 bg-black bg-opacity-50 z-50";
-    $root.appendChild(overlay);
+    document.body.appendChild(overlay);
 
     // overlay에 클릭 이벤트 추가 (배경 클릭 시 닫기) - 한 번만 추가
     overlay.addEventListener("click", (e) => {
@@ -104,6 +163,36 @@ const renderCartModal = () => {
 
   // 모달이 열려있음을 표시
   appState.cartModalOpen = true;
+
+  // 체크박스 change 이벤트 리스너 추가 (page.check()를 위해)
+  const selectAllCheckbox = overlay.querySelector("#cart-modal-select-all-checkbox");
+  if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener("change", (e) => {
+      const cart = store.getCart();
+      if (e.target.checked) {
+        appState.selectedCartItems = cart.map((item) => item.productId);
+      } else {
+        appState.selectedCartItems = [];
+      }
+      renderCartModal();
+    });
+  }
+
+  // 개별 체크박스 change 이벤트 리스너 추가
+  const itemCheckboxes = overlay.querySelectorAll(".cart-item-checkbox");
+  itemCheckboxes.forEach((checkbox) => {
+    checkbox.addEventListener("change", (e) => {
+      const productId = e.target.dataset.productId;
+      if (e.target.checked) {
+        if (!appState.selectedCartItems.includes(productId)) {
+          appState.selectedCartItems.push(productId);
+        }
+      } else {
+        appState.selectedCartItems = appState.selectedCartItems.filter((id) => id !== productId);
+      }
+      renderCartModal();
+    });
+  });
 
   // 모달 이벤트는 전역 리스너에서 처리
 };
@@ -161,6 +250,12 @@ const renderHomePage = async () => {
     cartCount: store.getCartCount(),
   });
 
+  // root 내부의 토스트 제거 (body에 직접 생성하므로)
+  const rootToastLoading = $root.querySelector("#toast-container");
+  if (rootToastLoading) {
+    rootToastLoading.remove();
+  }
+
   // 카테고리 로드 (아직 로드되지 않은 경우)
   if (Object.keys(appState.categories).length === 0) {
     appState.categories = await getCategories();
@@ -184,6 +279,12 @@ const renderHomePage = async () => {
     loadingMore: false,
     totalCount: appState.totalCount,
   });
+
+  // root 내부의 토스트 제거 (body에 직접 생성하므로)
+  const rootToast = $root.querySelector("#toast-container");
+  if (rootToast) {
+    rootToast.remove();
+  }
 
   // 이벤트 리스너 설정
   setupHomePageListeners();
@@ -307,6 +408,12 @@ const renderDetailPage = async (productId) => {
     cartCount: store.getCartCount(),
   });
 
+  // root 내부의 토스트 제거 (body에 직접 생성하므로)
+  const rootToastLoadingDetail = $root.querySelector("#toast-container");
+  if (rootToastLoadingDetail) {
+    rootToastLoadingDetail.remove();
+  }
+
   // 상품 상세 정보 로드
   const product = await getProduct(productId);
 
@@ -331,6 +438,12 @@ const renderDetailPage = async (productId) => {
     cartCount: store.getCartCount(),
     relatedProducts,
   });
+
+  // root 내부의 토스트 제거 (body에 직접 생성하므로)
+  const rootToast = $root.querySelector("#toast-container");
+  if (rootToast) {
+    rootToast.remove();
+  }
 
   // 상세페이지에서는 스크롤 이벤트 리스너 제거
   if (scrollEventListener) {
@@ -486,6 +599,7 @@ const setupGlobalListeners = () => {
       // 전체 선택 체크박스
       const selectAllCheckbox = target.closest("#cart-modal-select-all-checkbox");
       if (selectAllCheckbox) {
+        e.stopPropagation();
         const cart = store.getCart();
         if (selectAllCheckbox.checked) {
           appState.selectedCartItems = cart.map((item) => item.productId);
